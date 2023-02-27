@@ -1,17 +1,17 @@
 #!/usr/bin/bash
 
-# stdin: list of audio files OF THE SAME FORMAT and preferably mp3 (eg: ls ./dir/*mp3 | albumake ...)
+# stdin: list of audio files OF THE SAME FORMAT and preferably mp3 (eg: ls *mp3 | albumake ...)
 # arg 1: path to cover image
 # arg 2: output file name
 
 set -ueo pipefail
 
+# check number of arguments
+[ "$#" -eq 2 ] || (echo "Incorrect number of arguments. Exiting..." >&2 && false)
+
 cover="$1"
 output="$2"
 extension=""
-
-# check number of arguments
-[ "$#" -eq 2 ] || (echo "Incorrect number of arguments. Exiting..." >&2 && false)
 
 # fail if output file already exists
 [ -e "${output}" ] && (echo "File '${output}' already exists. Exiting..." >&2 && false)

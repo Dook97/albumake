@@ -12,7 +12,7 @@ low FPS. That also means the filesize is quite small for a FHD vid.
 ## example usage
 
 ```sh
-ls favorite_album/ | albumake cover.jpg favorite_album.mp4
+printf "song1.mp3\nsong2.mp3\n" | albumake cover.jpg favorite_album.mp4
 ```
 
 ## dependencies
