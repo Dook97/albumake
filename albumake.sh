@@ -6,12 +6,12 @@
 
 set -ueo pipefail
 
+# check number of arguments
+[ "$#" -eq 2 ] || (echo "Incorrect number of arguments. Exiting..." >&2 && false)
+
 cover="$1"
 output="$2"
 extension=""
-
-# check number of arguments
-[ "$#" -eq 2 ] || (echo "Incorrect number of arguments. Exiting..." >&2 && false)
 
 # fail if output file already exists
 [ -e "${output}" ] && (echo "File '${output}' already exists. Exiting..." >&2 && false)
