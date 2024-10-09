@@ -24,9 +24,9 @@ cleanup() {
 # convert number of seconds into a timestamp
 seconds_to_timestamp() {
 	local seconds minutes hours
-	seconds="$(echo "$1 % 60" | bc)"
-	minutes="$(echo "($1 % 3600) / 60" | bc)"
-	hours="$(echo "$1 / 3600" | bc)"
+	seconds="$(echo "scale=0;$1 % 60" | bc)"
+	minutes="$(echo "scale=0;($1 % 3600) / 60" | bc)"
+	hours="$(echo "scale=0;$1 / 3600" | bc)"
 	printf '%02d:%02d:%02d' "${hours}" "${minutes}" "${seconds}"
 }
 
@@ -40,7 +40,7 @@ temp_dir=$(mktemp -d)
 # as well as timestamps
 time=0
 while IFS=$'\n' read -r line; do
-	abspath="$(readlink -f "${line}")"
+	abspath="$(realpath "${line}")"
 	echo "file '${abspath}'" >> "${temp_dir}/audio_list"
 
 	filename=$(basename "${line}")
@@ -55,20 +55,18 @@ while IFS=$'\n' read -r line; do
 
 	echo "$(seconds_to_timestamp "${time%.*}")" "${filename%.*}" >> "${temp_dir}/timestamps"
 
-	time=$(ffprobe "${abspath}" 2>&1 | grep 'Duration' | \
-		sed -E "s/.*([0-9]+):0?([0-9]{1,2}):0?([0-9]{1,2})\\.0?([0-9]+).*/scale=2;${time}+\\1*3600+\\2*60+\\3+0.\\4/" | bc)
+	time=$(ffprobe "${abspath}" |& grep 'Duration' | cut -d' ' -f4 | \
+		sed -E "s/([0-9]+):([0-9]+):([0-9]+)\\.([0-9]+),/scale=2;${time}+\\1*3600+\\2*60+\\3+0.\\4/" | bc)
 done
 
 # create cover image
-convert "${cover}" -resize 1920x1080 -background black -gravity center -extent 1920x1080 "${temp_dir}/cover"
+magick "${cover}" -resize 1920x1080 -background black -gravity center -extent 1920x1080 "${temp_dir}/cover"
 
 # create the concatenated audio file
 ffmpeg -f concat -safe 0 -i "${temp_dir}/audio_list" -c copy "${temp_dir}/audio.${extension}"
 
 # create the video file
-ffmpeg -loop 1 -framerate 2 -i "${temp_dir}/cover" \
-	-i "${temp_dir}/audio.${extension}" -c:v libx264 \
-	-tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest "${output}"
+ffmpeg -i "${temp_dir}/cover" -i "${temp_dir}/audio.${extension}" -c:v libx264 -c:a aac "${output}"
 
 # print out timestamps
 cat "${temp_dir}/timestamps"
